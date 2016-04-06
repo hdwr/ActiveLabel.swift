@@ -14,10 +14,10 @@ public protocol ActiveLabelDelegate: class {
 }
 
 @IBDesignable public class ActiveLabel: UILabel {
-    
+
     // MARK: - public properties
     public weak var delegate: ActiveLabelDelegate?
-    
+
     @IBInspectable public var mentionColor: UIColor = .blueColor() {
         didSet { updateTextStorage(parseText: false) }
     }
@@ -44,11 +44,11 @@ public protocol ActiveLabelDelegate: class {
     public func handleMentionTap(handler: (String) -> ()) {
         mentionTapHandler = handler
     }
-    
+
     public func handleHashtagTap(handler: (String) -> ()) {
         hashtagTapHandler = handler
     }
-    
+
     public func handleURLTap(handler: (NSURL) -> ()) {
         urlTapHandler = handler
     }
@@ -67,19 +67,19 @@ public protocol ActiveLabelDelegate: class {
     override public var text: String? {
         didSet { updateTextStorage() }
     }
-    
+
     override public var attributedText: NSAttributedString? {
         didSet { updateTextStorage() }
     }
-    
+
     override public var font: UIFont! {
         didSet { updateTextStorage(parseText: false) }
     }
-    
+
     override public var textColor: UIColor! {
         didSet { updateTextStorage(parseText: false) }
     }
-    
+
     override public var textAlignment: NSTextAlignment {
         didSet { updateTextStorage(parseText: false)}
     }
@@ -98,7 +98,7 @@ public protocol ActiveLabelDelegate: class {
         _customizing = false
         setupLabel()
     }
-    
+
     required public init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
         _customizing = false
@@ -112,15 +112,15 @@ public protocol ActiveLabelDelegate: class {
     
     public override func drawTextInRect(rect: CGRect) {
         let range = NSRange(location: 0, length: textStorage.length)
-        
+
         textContainer.size = rect.size
         let newOrigin = textOrigin(inRect: rect)
-        
+
         layoutManager.drawBackgroundForGlyphRange(range, atPoint: newOrigin)
         layoutManager.drawGlyphsForGlyphRange(range, atPoint: newOrigin)
     }
-    
-    
+
+
     // MARK: - customzation
     public func customize(block: (label: ActiveLabel) -> ()) -> ActiveLabel{
         _customizing = true
@@ -134,7 +134,7 @@ public protocol ActiveLabelDelegate: class {
     func onTouch(touch: UITouch) -> Bool {
         let location = touch.locationInView(self)
         var avoidSuperCall = false
-        
+
         switch touch.phase {
         case .Began, .Moved:
             if let element = elementAtLocation(location) {
@@ -157,7 +157,7 @@ public protocol ActiveLabelDelegate: class {
             case .URL(let url): didTapStringURL(url)
             case .None: ()
             }
-            
+
             let when = dispatch_time(DISPATCH_TIME_NOW, Int64(0.25 * Double(NSEC_PER_SEC)))
             dispatch_after(when, dispatch_get_main_queue()) {
                 self.updateAttributesWhenSelected(false)
@@ -170,13 +170,13 @@ public protocol ActiveLabelDelegate: class {
         case .Stationary:
             break
         }
-        
+
         return avoidSuperCall
     }
-    
+
     // MARK: - private properties
     private var _customizing: Bool = true
-    
+
     private var mentionTapHandler: ((String) -> ())?
     private var hashtagTapHandler: ((String) -> ())?
     private var urlTapHandler: ((NSURL) -> ())?
@@ -194,7 +194,7 @@ public protocol ActiveLabelDelegate: class {
         .Hashtag: [],
         .URL: [],
     ]
-    
+
     // MARK: - helper functions
     private func setupLabel() {
         textStorage.addLayoutManager(layoutManager)
@@ -204,7 +204,7 @@ public protocol ActiveLabelDelegate: class {
         textContainer.maximumNumberOfLines = numberOfLines
         userInteractionEnabled = true
     }
-    
+
     private func updateTextStorage(parseText parseText: Bool = true) {
         if _customizing { return }
         // clean up previous active elements
@@ -212,7 +212,7 @@ public protocol ActiveLabelDelegate: class {
             where attributedText.length > 0 else {
             return
         }
-        
+
         let mutAttrString = addLineBreak(attributedText)
 
         if parseText {
@@ -222,19 +222,19 @@ public protocol ActiveLabelDelegate: class {
             }
             parseTextAndExtractActiveElements(mutAttrString)
         }
-        
+
         self.addLinkAttribute(mutAttrString)
         self.textStorage.setAttributedString(mutAttrString)
         self.setNeedsDisplay()
     }
-    
+
     private func textOrigin(inRect rect: CGRect) -> CGPoint {
         let usedRect = layoutManager.usedRectForTextContainer(textContainer)
         heightCorrection = (rect.height - usedRect.height)/2
         let glyphOriginY = heightCorrection > 0 ? rect.origin.y + heightCorrection : rect.origin.y
         return CGPoint(x: rect.origin.x, y: glyphOriginY)
     }
-    
+
     /// add link attribute
     private func addLinkAttribute(mutAttrString: NSMutableAttributedString) {
         var range = NSRange(location: 0, length: 0)
@@ -247,26 +247,26 @@ public protocol ActiveLabelDelegate: class {
         attributes[NSForegroundColorAttributeName] = mentionColor
         
         for (type, elements) in activeElements {
-            
+
             switch type {
             case .Mention: attributes[NSForegroundColorAttributeName] = mentionColor
             case .Hashtag: attributes[NSForegroundColorAttributeName] = hashtagColor
             case .URL: attributes[NSForegroundColorAttributeName] = URLColor
             case .None: ()
             }
-            
+
             for element in elements {
                 mutAttrString.setAttributes(attributes, range: element.range)
             }
         }
     }
-    
+
     /// use regex check all link ranges
     private func parseTextAndExtractActiveElements(attrString: NSAttributedString) {
         let textString = attrString.string
         let textLength = textString.utf16.count
         let textRange = NSRange(location: 0, length: textLength)
-        
+
         //URLS
         let urlElements = ActiveBuilder.createURLElements(fromText: textString, range: textRange)
         activeElements[.URL]?.appendContentsOf(urlElements)
@@ -280,25 +280,25 @@ public protocol ActiveLabelDelegate: class {
         activeElements[.Mention]?.appendContentsOf(mentionElements)
     }
 
-    
+
     /// add line break mode
     private func addLineBreak(attrString: NSAttributedString) -> NSMutableAttributedString {
         let mutAttrString = NSMutableAttributedString(attributedString: attrString)
-        
+
         var range = NSRange(location: 0, length: 0)
         var attributes = mutAttrString.attributesAtIndex(0, effectiveRange: &range)
-        
+
         let paragraphStyle = attributes[NSParagraphStyleAttributeName] as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
         paragraphStyle.lineBreakMode = NSLineBreakMode.ByWordWrapping
         paragraphStyle.alignment = textAlignment
         paragraphStyle.lineSpacing = CGFloat(lineSpacing)
-        
+
         attributes[NSParagraphStyleAttributeName] = paragraphStyle
         mutAttrString.setAttributes(attributes, range: range)
-        
+
         return mutAttrString
     }
-    
+
     private func updateAttributesWhenSelected(isSelected: Bool) {
         guard let selectedElement = selectedElement else {
             return
@@ -320,12 +320,12 @@ public protocol ActiveLabelDelegate: class {
             case .None: ()
             }
         }
-        
+
         textStorage.addAttributes(attributes, range: selectedElement.range)
-        
+
         setNeedsDisplay()
     }
-    
+
     private func elementAtLocation(location: CGPoint) -> (range: NSRange, element: ActiveElement)? {
         guard textStorage.length > 0 else {
             return nil
@@ -337,19 +337,19 @@ public protocol ActiveLabelDelegate: class {
         guard boundingRect.contains(correctLocation) else {
             return nil
         }
-        
+
         let index = layoutManager.glyphIndexForPoint(correctLocation, inTextContainer: textContainer)
-        
+
         for element in activeElements.map({ $0.1 }).flatten() {
             if index >= element.range.location && index <= element.range.location + element.range.length {
                 return element
             }
         }
-        
+
         return nil
     }
-    
-    
+
+
     //MARK: - Handle UI Responder touches
     public override func touchesBegan(touches: Set<UITouch>, withEvent event: UIEvent?) {
         guard let touch = touches.first else { return }
@@ -368,13 +368,13 @@ public protocol ActiveLabelDelegate: class {
         onTouch(touch)
         super.touchesCancelled(touches, withEvent: event)
     }
-    
+
     public override func touchesEnded(touches: Set<UITouch>, withEvent event: UIEvent?) {
         guard let touch = touches.first else { return }
         if onTouch(touch) { return }
         super.touchesEnded(touches, withEvent: event)
     }
-    
+
     //MARK: - ActiveLabel handler
     private func didTapMention(username: String) {
         guard let mentionHandler = mentionTapHandler else {
@@ -383,7 +383,7 @@ public protocol ActiveLabelDelegate: class {
         }
         mentionHandler(username)
     }
-    
+
     private func didTapHashtag(hashtag: String) {
         guard let hashtagHandler = hashtagTapHandler else {
             delegate?.didSelectText(hashtag, type: .Hashtag)
@@ -391,7 +391,7 @@ public protocol ActiveLabelDelegate: class {
         }
         hashtagHandler(hashtag)
     }
-    
+
     private func didTapStringURL(stringURL: String) {
         guard let urlHandler = urlTapHandler, let url = NSURL(string: stringURL) else {
             delegate?.didSelectText(stringURL, type: .URL)
@@ -402,15 +402,15 @@ public protocol ActiveLabelDelegate: class {
 }
 
 extension ActiveLabel: UIGestureRecognizerDelegate {
-    
+
     public func gestureRecognizer(gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWithGestureRecognizer otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         return true
     }
-    
+
     public func gestureRecognizer(gestureRecognizer: UIGestureRecognizer, shouldRequireFailureOfGestureRecognizer otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         return true
     }
-    
+
     public func gestureRecognizer(gestureRecognizer: UIGestureRecognizer, shouldBeRequiredToFailByGestureRecognizer otherGestureRecognizer: UIGestureRecognizer) -> Bool {
         return true
     }
