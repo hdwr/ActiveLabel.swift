@@ -40,6 +40,8 @@ public protocol ActiveLabelDelegate: class {
         didSet { updateTextStorage(parseText: false) }
     }
 
+    public var textAttributes: [String : AnyObject]?
+
     // MARK: - public methods
     public func handleMentionTap(handler: (String) -> ()) {
         mentionTapHandler = handler
@@ -237,21 +239,23 @@ public protocol ActiveLabelDelegate: class {
 
     /// add link attribute
     private func addLinkAttribute(mutAttrString: NSMutableAttributedString) {
-        var range = NSRange(location: 0, length: 0)
-        var attributes = mutAttrString.attributesAtIndex(0, effectiveRange: &range)
-        
-        attributes[NSFontAttributeName] = font!
-        attributes[NSForegroundColorAttributeName] = textColor
-        mutAttrString.addAttributes(attributes, range: range)
-        
-        attributes[NSForegroundColorAttributeName] = mentionColor
-        
+
+        var attributes: [String: AnyObject]
+        if textAttributes != nil {
+            attributes = textAttributes!
+        } else {
+            // If attributes were not provided, pull the attributes from the first character.
+            var range = NSRange(location: 0, length: 0)
+            attributes = mutAttrString.attributesAtIndex(0, effectiveRange: &range)
+            attributes[NSFontAttributeName] = font!
+        }
+
         for (type, elements) in activeElements {
 
             switch type {
             case .Mention: attributes[NSForegroundColorAttributeName] = mentionColor
             case .Hashtag: attributes[NSForegroundColorAttributeName] = hashtagColor
-            case .URL: attributes[NSForegroundColorAttributeName] = URLColor
+            case .URL:     attributes[NSForegroundColorAttributeName] = URLColor
             case .None: ()
             }
 
@@ -303,13 +307,19 @@ public protocol ActiveLabelDelegate: class {
         guard let selectedElement = selectedElement else {
             return
         }
-        
-        var attributes = textStorage.attributesAtIndex(0, effectiveRange: nil)
+
+        var attributes: [String: AnyObject]
+        if textAttributes != nil {
+            attributes = textAttributes!
+        } else {
+            attributes = textStorage.attributesAtIndex(0, effectiveRange: nil)
+        }
+
         if isSelected {
             switch selectedElement.element {
             case .Mention(_): attributes[NSForegroundColorAttributeName] = mentionSelectedColor ?? mentionColor
             case .Hashtag(_): attributes[NSForegroundColorAttributeName] = hashtagSelectedColor ?? hashtagColor
-            case .URL(_): attributes[NSForegroundColorAttributeName] = URLSelectedColor ?? URLColor
+            case .URL(_): attributes[NSForegroundColorAttributeName]     = URLSelectedColor ?? URLColor
             case .None: ()
             }
         } else {
