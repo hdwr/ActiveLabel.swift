@@ -55,6 +55,10 @@ public protocol ActiveLabelDelegate: class {
         urlTapHandler = handler
     }
 
+    public func handleDefaultTap(handler: () -> ()) {
+        defaultTapHandler = handler
+    }
+
     public func filterMention(predicate: (String) -> Bool) {
         mentionFilterPredicate = predicate
         updateTextStorage()
@@ -151,8 +155,13 @@ public protocol ActiveLabelDelegate: class {
                 selectedElement = nil
             }
         case .Ended:
-            guard let selectedElement = selectedElement else { return avoidSuperCall }
-            
+            guard let selectedElement = selectedElement else {
+                // Run this callback after we are sure we didn't
+                // tap a mention or hashtag
+                defaultTapHandler?()
+                return avoidSuperCall
+            }
+
             switch selectedElement.element {
             case .Mention(let userHandle): didTapMention(userHandle)
             case .Hashtag(let hashtag): didTapHashtag(hashtag)
@@ -182,6 +191,7 @@ public protocol ActiveLabelDelegate: class {
     private var mentionTapHandler: ((String) -> ())?
     private var hashtagTapHandler: ((String) -> ())?
     private var urlTapHandler: ((NSURL) -> ())?
+    private var defaultTapHandler: (() -> ())?
 
     private var mentionFilterPredicate: ((String) -> Bool)?
     private var hashtagFilterPredicate: ((String) -> Bool)?
