@@ -237,6 +237,7 @@ public protocol ActiveLabelDelegate: class {
 
         self.addLinkAttribute(mutAttrString)
         self.textStorage.setAttributedString(mutAttrString)
+        self.addAccessibilityElements(mutAttrString)
         self.setNeedsDisplay()
     }
 
@@ -249,7 +250,6 @@ public protocol ActiveLabelDelegate: class {
 
     /// add link attribute
     private func addLinkAttribute(mutAttrString: NSMutableAttributedString) {
-
         var attributes: [String: AnyObject]
         if textAttributes != nil {
             attributes = textAttributes!
@@ -261,7 +261,6 @@ public protocol ActiveLabelDelegate: class {
         }
 
         for (type, elements) in activeElements {
-
             switch type {
             case .Mention: attributes[NSForegroundColorAttributeName] = mentionColor
             case .Hashtag: attributes[NSForegroundColorAttributeName] = hashtagColor
@@ -269,10 +268,58 @@ public protocol ActiveLabelDelegate: class {
             case .None: ()
             }
 
-            for element in elements {
-                mutAttrString.setAttributes(attributes, range: element.range)
+            for (range, _) in elements {
+                mutAttrString.setAttributes(attributes, range: range)
             }
         }
+    }
+
+
+    private func addAccessibilityElements(attrString: NSAttributedString) {
+        if var accessibilityElements = accessibilityElements {
+            accessibilityElements.removeAll()
+        } else {
+            accessibilityElements = []
+        }
+
+        for (_, elements) in activeElements {
+            for (range, element) in elements {
+                let accessibilityLabel: String
+                switch element {
+                case .Mention(let mention): accessibilityLabel = mention
+                case .Hashtag(let hashtag): accessibilityLabel = hashtag
+                case .URL(let url):         accessibilityLabel = url
+                case .None:                 accessibilityLabel = ""
+                }
+
+                let accessibilityElement = ActiveAccessibilityElement(accessibilityContainer: self)
+                accessibilityElement.accessibilityTraits = UIAccessibilityTraitLink
+                accessibilityElement.accessibilityLabel = accessibilityLabel
+                accessibilityElement.range = range
+                accessibilityElements?.append(accessibilityElement)
+                accessibilityElement.accessibilityFrame = accessibilityFrameForTextRange(range)
+            }
+        }
+    }
+
+    private func accessibilityFrameForTextRange(range: NSRange) -> CGRect {
+        var glyphRange = NSRange()
+        layoutManager.characterRangeForGlyphRange(range, actualGlyphRange: &glyphRange)
+        let boundingRect = layoutManager.boundingRectForGlyphRange(glyphRange, inTextContainer: textContainer)
+        return UIAccessibilityConvertFrameToScreenCoordinates(boundingRect, self)
+    }
+
+    // We need to recalculate the frame every time this is called.
+    // The accessibility frame is relative the window, and the label might move around
+    override public func accessibilityElementAtIndex(index: Int) -> AnyObject? {
+        guard let accessibilityElements = accessibilityElements as? [ActiveAccessibilityElement]
+            where accessibilityElements.indices.contains(index) else {
+                return nil
+        }
+
+        let element = accessibilityElements[index]
+        element.accessibilityFrame = accessibilityFrameForTextRange(element.range)
+        return element
     }
 
     /// use regex check all link ranges

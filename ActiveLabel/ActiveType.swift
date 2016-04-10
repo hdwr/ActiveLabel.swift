@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import UIKit
 
 enum ActiveElement {
     case Mention(String)
@@ -20,6 +21,10 @@ public enum ActiveType {
     case Hashtag
     case URL
     case None
+}
+
+public class ActiveAccessibilityElement: UIAccessibilityElement {
+    var range: NSRange!
 }
 
 typealias ActiveFilterPredicate = (String -> Bool)
