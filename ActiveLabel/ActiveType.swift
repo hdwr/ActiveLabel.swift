@@ -40,7 +40,7 @@ struct ActiveBuilder {
 
             if filterPredicate?(word) ?? true {
                 let element = ActiveElement.Mention(word)
-                elements.append((mention.range, element))
+                elements.append((range, element))
             }
         }
         return elements
@@ -60,7 +60,7 @@ struct ActiveBuilder {
 
             if filterPredicate?(word) ?? true {
                 let element = ActiveElement.Hashtag(word)
-                elements.append((hashtag.range, element))
+                elements.append((range, element))
             }
         }
         return elements
