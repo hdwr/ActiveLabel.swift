@@ -127,6 +127,15 @@ public protocol ActiveLabelDelegate: class {
     }
 
 
+    // MARK: - Auto layout
+    public override func intrinsicContentSize() -> CGSize {
+        let superSize = super.intrinsicContentSize()
+        textContainer.size = CGSize(width: superSize.width, height: CGFloat.max)
+        let size = layoutManager.usedRectForTextContainer(textContainer)
+        return CGSize(width: size.width + layoutMargins.left + layoutMargins.right, height: size.height + layoutMargins.top + layoutMargins.bottom)
+    }
+
+
     // MARK: - customzation
     public func customize(block: (label: ActiveLabel) -> ()) -> ActiveLabel{
         _customizing = true
