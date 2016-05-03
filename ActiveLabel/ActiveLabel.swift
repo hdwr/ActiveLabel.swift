@@ -314,7 +314,8 @@ public protocol ActiveLabelDelegate: class {
     private func accessibilityFrameForTextRange(range: NSRange) -> CGRect {
         var glyphRange = NSRange()
         layoutManager.characterRangeForGlyphRange(range, actualGlyphRange: &glyphRange)
-        let boundingRect = layoutManager.boundingRectForGlyphRange(glyphRange, inTextContainer: textContainer)
+        var boundingRect = layoutManager.boundingRectForGlyphRange(glyphRange, inTextContainer: textContainer)
+        boundingRect.origin.y += layoutMargins.top
         return UIAccessibilityConvertFrameToScreenCoordinates(boundingRect, self)
     }
 
