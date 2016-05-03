@@ -361,7 +361,9 @@ public protocol ActiveLabelDelegate: class {
         let paragraphStyle = attributes[NSParagraphStyleAttributeName] as? NSMutableParagraphStyle ?? NSMutableParagraphStyle()
         paragraphStyle.lineBreakMode = NSLineBreakMode.ByWordWrapping
         paragraphStyle.alignment = textAlignment
-        paragraphStyle.lineSpacing = CGFloat(lineSpacing)
+        if lineSpacing != 0 {
+            paragraphStyle.lineSpacing = CGFloat(lineSpacing)
+        }
 
         attributes[NSParagraphStyleAttributeName] = paragraphStyle
         mutAttrString.setAttributes(attributes, range: range)
